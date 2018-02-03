@@ -13,7 +13,7 @@ public class PlayerMovement : NetworkBehaviour {
 
     private float rotY = 0.0f; // rotation around the up/y axis
     private float rotX = 0.0f; // rotation around the right/x axis
-    private GameObject maincam;
+    public GameObject maincam;
 
     PlayerHealth playerHealth;
     Rigidbody rigid; 
@@ -22,7 +22,6 @@ public class PlayerMovement : NetworkBehaviour {
 	void Start () {
         playerHealth = GetComponent<PlayerHealth>();
         rigid = GetComponent<Rigidbody>();
-        maincam = GetComponentInChildren<Camera>().gameObject;
         playerHealth.Respawn();
         Vector3 rot = transform.localRotation.eulerAngles;
         rotY = rot.y;
@@ -30,7 +29,8 @@ public class PlayerMovement : NetworkBehaviour {
 
         if (!isLocalPlayer) return;
         Cursor.lockState = CursorLockMode.Locked;
-        GameObject.FindGameObjectWithTag("MainCamera").transform.parent = transform;
+        maincam.SetActive(true);
+        GameObject.FindGameObjectWithTag("TempCam").SetActive(false);
     }
 	
 	// Update is called once per frame
@@ -69,10 +69,17 @@ public class PlayerMovement : NetworkBehaviour {
 
         if (Input.GetKey("space"))
         {
-            GameObject spawnedBullet = Instantiate(bullet);
-            spawnedBullet.transform.position = transform.position + transform.forward.normalized * 2;
-            spawnedBullet.GetComponent<Rigidbody>().AddForce(maincam.transform.forward * 1500f);
-            spawnedBullet.GetComponent<Renderer>().material.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+            CmdShoot();
         }
+    }
+
+    [Command]
+    void CmdShoot()
+    {
+        GameObject spawnedBullet = Instantiate(bullet);
+        spawnedBullet.transform.position = transform.position + transform.forward.normalized * 2;
+        spawnedBullet.GetComponent<Rigidbody>().velocity = maincam.transform.forward * 20f;
+        spawnedBullet.GetComponent<Renderer>().material.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+        NetworkServer.Spawn(spawnedBullet);
     }
 }
